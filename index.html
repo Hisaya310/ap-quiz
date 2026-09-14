@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>応用情報 一問一答クイズ Pro</title>
+<style>
+  :root {
+    --navy: #0f1e3d;
+    --navy2: #16294f;
+    --blue: #2f6fed;
+    --blue-light: #6fa3ff;
+    --green: #1fae6b;
+    --red: #e5484d;
+    --amber: #e0a63f;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1b2540;
+    --muted: #6b7690;
+    --border: #e3e7f0;
+    --input-bg: #ffffff;
+  }
+  [data-theme="dark"] {
+    --navy: #7fa8ff;
+    --navy2: #0b1730;
+    --blue: #4c86ff;
+    --blue-light: #8fb8ff;
+    --green: #33cc85;
+    --red: #ff6b6f;
+    --amber: #ffc266;
+    --bg: #0b1220;
+    --card: #131c31;
+    --text: #e8ecf6;
+    --muted: #8b93a8;
+    --border: #263049;
+    --input-bg: #0e1626;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100%;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  #app {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 2px 18px;
+    gap: 8px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--blue), var(--navy2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .brand h1 {
+    font-size: 15px;
+    margin: 0;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .brand p {
+    margin: 0;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .icon-btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--card);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 1px 3px rgba(20,30,60,0.05);
+  }
+  .card + .card { margin-top: 14px; }
+
+  h2 { font-size: 19px; margin: 0 0 10px; }
+  h3 { font-size: 14px; margin: 0 0 10px; }
+  p.desc { color: var(--muted); font-size: 13.5px; line-height: 1.7; margin: 0 0 16px; }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+  .tag.tech { background: #e8f0ff; color: #2f6fed; }
+  .tag.mgmt { background: #eafaf1; color: #1fae6b; }
+  .tag.strategy { background: #fff4e6; color: #c9821f; }
+  .tag.mc { background: #f1f0ff; color: #6a4fd6; }
+  .tag.short { background: #ffeef0; color: #d6467a; }
+  .tag.case { background: #fff0f0; color: #d64545; }
+  [data-theme="dark"] .tag.tech { background: rgba(47,111,237,0.18); }
+  [data-theme="dark"] .tag.mgmt { background: rgba(31,174,107,0.18); }
+  [data-theme="dark"] .tag.strategy { background: rgba(224,166,63,0.18); }
+  [data-theme="dark"] .tag.mc { background: rgba(106,79,214,0.2); }
+  [data-theme="dark"] .tag.short { background: rgba(214,70,122,0.2); }
+  [data-theme="dark"] .tag.case { background: rgba(214,69,69,0.2); }
+
+  .diff-dots { display: inline-flex; gap: 2px; vertical-align: middle; margin-left: 4px; }
+  .diff-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--border); }
+  .diff-dots span.on { background: var(--amber); }
+
+  /* ---- filter chips ---- */
+  .filter-group { margin-bottom: 16px; }
+  .filter-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    appearance: none;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .chip.active.tech { border-color: #2f6fed; background: #e8f0ff; color: #2f6fed; }
+  .chip.active.mgmt { border-color: #1fae6b; background: #eafaf1; color: #1fae6b; }
+  .chip.active.strategy { border-color: #e0a63f; background: #fff4e6; color: #c9821f; }
+  .chip.active.neutral { border-color: var(--blue); background: var(--blue); color: white; }
+  [data-theme="dark"] .chip.active.tech { background: rgba(47,111,237,0.2); }
+  [data-theme="dark"] .chip.active.mgmt { background: rgba(31,174,107,0.2); }
+  [data-theme="dark"] .chip.active.strategy { background: rgba(224,166,63,0.2); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row .t-label { font-size: 13.5px; font-weight: 600; }
+  .toggle-row .t-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; inset: 0; background: var(--border); border-radius: 999px;
+    cursor: pointer; transition: background 0.15s ease;
+  }
+  .switch .slider::before {
+    content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px;
+    background: white; border-radius: 50%; transition: transform 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .slider { background: var(--blue); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  select.pill-select {
+    appearance: none;
+    border: 1.5px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    padding: 8px 30px 8px 13px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7690' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  button.primary {
+    appearance: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: white;
+    background: linear-gradient(135deg, var(--blue), var(--navy2));
+    box-shadow: 0 8px 20px rgba(47,111,237,0.25);
+  }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.4; cursor: default; }
+  button.secondary {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    font-weight: 700;
+    width: 100%;
+  }
+  button.secondary:disabled { opacity: 0.4; cursor: default; }
+  button.ghost {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 0;
+  }
+
+  .stat-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .stat-box { background: var(--bg); border-radius: 12px; padding: 12px 8px; text-align: center; }
+  .stat-box .num { font-size: 19px; font-weight: 800; color: var(--navy); }
+  [data-theme="dark"] .stat-box .num { color: var(--blue-light); }
+  .stat-box .label { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ---- Quiz screen ---- */
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--blue-light)); border-radius: 999px; transition: width 0.25s ease; }
+  .progress-text { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+
+  .timer-row { display: none; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .timer-row.show { display: flex; }
+  .timer-track { flex: 1; height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .timer-fill { height: 100%; background: var(--amber); border-radius: 999px; transition: width 1s linear; }
+  .timer-fill.danger { background: var(--red); }
+  .timer-num { font-size: 11.5px; font-weight: 800; color: var(--muted); width: 26px; text-align: right; }
+
+  .q-tags { display: flex; gap: 6px; margin: 12px 0 12px; flex-wrap: wrap; align-items: center; }
+  .case-box {
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+  }
+  .case-box .case-label { font-size: 11px; font-weight: 800; color: var(--red); margin-bottom: 6px; }
+
+  .q-text { font-size: 16.5px; line-height: 1.65; font-weight: 700; margin: 0 0 20px; white-space: pre-wrap; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    text-align: left;
+    appearance: none;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    padding: 13px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  .opt-btn:hover:not(:disabled) { border-color: var(--blue-light); }
+  .opt-btn .opt-mark {
+    width: 22px; height: 22px; border-radius: 999px; border: 1.5px solid var(--border);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: var(--muted);
+  }
+  .opt-btn:disabled { cursor: default; }
+  .opt-btn.correct { border-color: var(--green); background: rgba(31,174,107,0.08); }
+  .opt-btn.correct .opt-mark { background: var(--green); color: white; border-color: var(--green); }
+  .opt-btn.incorrect { border-color: var(--red); background: rgba(229,72,77,0.08); }
+  .opt-btn.incorrect .opt-mark { background: var(--red); color: white; border-color: var(--red); }
+
+  .short-input-row { display: flex; gap: 8px; }
+  #short-input {
+    flex: 1; padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+    font-size: 15px; font-family: inherit; background: var(--input-bg); color: var(--text);
+  }
+  #short-input:focus { outline: none; border-color: var(--blue); }
+  #short-submit {
+    appearance: none; border: none; background: var(--navy2); color: white; font-weight: 700;
+    padding: 0 18px; border-radius: 12px; cursor: pointer; font-size: 14px;
+  }
+
+  .feedback { margin-top: 18px; padding: 14px 16px; border-radius: 12px; display: none; }
+  .feedback.show { display: block; }
+  .feedback.ok { background: rgba(31,174,107,0.08); border: 1px solid rgba(31,174,107,0.35); }
+  .feedback.ng { background: rgba(229,72,77,0.08); border: 1px solid rgba(229,72,77,0.35); }
+  .feedback .fb-title { font-weight: 800; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .feedback.ok .fb-title { color: var(--green); }
+  .feedback.ng .fb-title { color: var(--red); }
+  .feedback .fb-body { font-size: 13px; line-height: 1.7; color: var(--text); }
+  .feedback .fb-answer { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+
+  #next-btn { margin-top: 16px; display: none; }
+  #next-btn.show { display: block; }
+
+  /* ---- Result ---- */
+  #result-screen .score-big { font-size: 44px; font-weight: 800; color: var(--navy); margin: 6px 0 0; text-align: center; }
+  [data-theme="dark"] #result-screen .score-big { color: var(--blue-light); }
+  #result-screen .score-sub { color: var(--muted); font-size: 13px; margin-bottom: 4px; text-align: center; }
+  .breakdown { text-align: left; margin: 18px 0 6px; }
+  .bd-row { margin-bottom: 12px; }
+  .bd-row .bd-head { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-bottom: 5px; }
+  .bd-track { height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+  .bd-fill { height: 100%; border-radius: 999px; }
+  .bd-fill.tech { background: #2f6fed; }
+  .bd-fill.mgmt { background: #1fae6b; }
+  .bd-fill.strategy { background: #e0a63f; }
+  .result-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+  /* ---- Stats screen ---- */
+  .history-bars { display: flex; align-items: flex-end; gap: 5px; height: 70px; margin: 10px 0 4px; }
+  .history-bars .hb { flex: 1; background: var(--blue-light); border-radius: 4px 4px 0 0; min-height: 3px; }
+  .weak-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .weak-item:last-child { border-bottom: none; }
+  .weak-item .wq-text { flex: 1; line-height: 1.5; }
+  .weak-item .wq-rate { font-size: 11.5px; font-weight: 800; color: var(--red); white-space: nowrap; }
+  .empty-note { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
+
+  [hidden] { display: none !important; }
+
+  footer { text-align: center; margin-top: 20px; font-size: 11px; color: var(--muted); opacity: 0.7; }
+
+  @media (max-width: 380px) {
+    .card { padding: 17px; }
+    .stat-mini-grid { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">AP</div>
+      <div style="min-width:0;">
+        <h1>応用情報 一問一答 Pro</h1>
+        <p>テクノロジ・マネジメント・ストラテジ</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="sound-toggle" title="サウンド">🔊</button>
+      <button class="icon-btn" id="theme-toggle" title="ダークモード">🌙</button>
+    </div>
+  </header>
+
+  <div id="start-screen">
+    <div class="card">
+      <h2>力試しクイズ</h2>
+      <p class="desc">応用情報技術者試験(午前・午後の一部)をイメージしたオリジナル問題です。四択・記述に加えて、午後風の長文ケース問題にも対応。分野と難易度を選んで出題できます。</p>
+
+      <div class="stat-mini-grid">
+        <div class="stat-box"><div class="num" id="pool-count">57</div><div class="label">出題候補</div></div>
+        <div class="stat-box"><div class="num" id="best-num">--</div><div class="label">自己ベスト</div></div>
+        <div class="stat-box"><div class="num" id="session-count">0</div><div class="label">総プレイ回数</div></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">分野を選ぶ</div>
+        <div class="chip-row" id="cat-chips">
+          <button class="chip active tech" data-cat="tech">テクノロジ系</button>
+          <button class="chip active mgmt" data-cat="mgmt">マネジメント系</button>
+          <button class="chip active strategy" data-cat="strategy">ストラテジ系</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">難易度</div>
+        <div class="chip-row" id="diff-chips">
+          <button class="chip active neutral" data-diff="all">すべて</button>
+          <button class="chip neutral" data-diff="1">やさしい</button>
+          <button class="chip neutral" data-diff="2">ふつう</button>
+          <button class="chip neutral" data-diff="3">むずかしい</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">問題数</div>
+        <div class="chip-row" id="count-chips">
+          <button class="chip neutral" data-count="10">10問</button>
+          <button class="chip active neutral" data-count="20">20問</button>
+          <button class="chip neutral" data-count="30">30問</button>
+          <button class="chip neutral" data-count="999">全問</button>
+        </div>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:6px;">
+        <div class="toggle-row">
+          <div>
+            <div class="t-label">タイムアタックモード</div>
+            <div class="t-sub">1問45秒の制限時間つき</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="timer-mode"><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <p class="desc" id="pool-warning" style="display:none; color:#e5484d;">選択した条件に該当する問題がありません。分野か難易度を見直してください。</p>
+
+      <button class="primary" id="start-btn">クイズを始める</button>
+      <div style="text-align:center;">
+        <button class="ghost" id="goto-stats-btn">学習履歴・苦手問題を見る →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="quiz-screen" class="card" hidden>
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">1 / 20</div>
+    </div>
+    <div class="timer-row" id="timer-row">
+      <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      <div class="timer-num" id="timer-num">45</div>
+    </div>
+
+    <div id="case-box" class="case-box" hidden>
+      <div class="case-label" id="case-label">ケース問題</div>
+      <div id="case-passage"></div>
+    </div>
+
+    <div class="q-tags" id="q-tags"></div>
+    <p class="q-text" id="q-text"></p>
+
+    <div class="options" id="options-wrap"></div>
+
+    <div class="short-input-row" id="short-wrap" style="display:none;">
+      <input type="text" id="short-input" placeholder="答えを入力" autocomplete="off">
+      <button id="short-submit">回答する</button>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <div class="fb-title" id="fb-title"></div>
+      <div class="fb-body" id="fb-body"></div>
+      <div class="fb-answer" id="fb-answer"></div>
+    </div>
+
+    <button class="primary" id="next-btn">次の問題へ</button>
+  </div>
+
+  <div id="result-screen" class="card" hidden>
+    <div class="score-sub">結果</div>
+    <div class="score-big" id="score-big">0/20</div>
+    <div class="score-sub" id="score-percent"></div>
+
+    <div class="breakdown" id="breakdown"></div>
+
+    <div class="result-actions">
+      <button class="primary" id="retry-btn">もう一度挑戦する</button>
+      <button class="secondary" id="review-btn">間違えた問題を見直す</button>
+      <button class="ghost" id="back-to-start-btn">条件を変えて戻る</button>
+    </div>
+  </div>
+
+  <div id="stats-screen" hidden>
+    <div class="card">
+      <h2>学習履歴</h2>
+      <div class="stat-mini-grid">
+        <div class="stat-box"><div class="num" id="s-total-sessions">0</div><div class="label">総プレイ回数</div></div>
+        <div class="stat-box"><div class="num" id="s-avg-pct">--</div><div class="label">平均正答率</div></div>
+        <div class="stat-box"><div class="num" id="s-best">--</div><div class="label">自己ベスト</div></div>
+      </div>
+      <h3 style="margin-top:18px;">直近のスコア推移</h3>
+      <div class="history-bars" id="history-bars"></div>
+      <div class="empty-note" id="history-empty" hidden>まだプレイ履歴がありません</div>
+    </div>
+
+    <div class="card">
+      <h3>分野別 正答率(累計)</h3>
+      <div class="breakdown" id="cat-breakdown"></div>
+    </div>
+
+    <div class="card">
+      <h3>苦手な問題 TOP</h3>
+      <div id="weak-list"></div>
+      <div class="empty-note" id="weak-empty" hidden>まだ苦手な問題は見つかっていません</div>
+      <button class="primary" id="review-weak-btn" style="margin-top:12px;">苦手問題だけ復習する</button>
+    </div>
+
+    <button class="ghost" id="back-from-stats-btn">← 戻る</button>
+  </div>
+
+  <footer>VIBE CODED · FREE HOSTED · 本アプリの問題はオリジナル作成の学習用サンプルです</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const CATS = {
+    tech: { label: "テクノロジ系", cls: "tech" },
+    mgmt: { label: "マネジメント系", cls: "mgmt" },
+    strategy: { label: "ストラテジ系", cls: "strategy" }
+  };
+
+  // ============ Question bank ============
+  const STANDALONE = [
+    // --- テクノロジ系 四択 ---
+    { id: "t01", cat: "tech", diff: 1, type: "mc", q: "二分探索アルゴリズムの計算量(オーダー)として正しいものはどれか。", opts: ["O(1)", "O(log n)", "O(n)", "O(n log n)"], answer: 1,
+      exp: "二分探索は探索範囲を1回の比較ごとに半分にしていくため、比較回数はO(log n)になる。" },
+    { id: "t02", cat: "tech", diff: 2, type: "mc", q: "関係データベースの正規化において、非キー属性が候補キーの一部にしか従属していない状態(部分関数従属)を排除した正規形はどれか。", opts: ["第1正規形", "第2正規形", "第3正規形", "ボイス・コッド正規形"], answer: 1,
+      exp: "第2正規形は、第1正規形の条件を満たしたうえで部分関数従属を排除した状態を指す。" },
+    { id: "t03", cat: "tech", diff: 1, type: "mc", q: "OSI基本参照モデルにおいて、IPアドレスによる論理アドレッシングとルーティングを担当する層はどれか。", opts: ["物理層", "データリンク層", "ネットワーク層", "トランスポート層"], answer: 2,
+      exp: "ネットワーク層(第3層)はIPアドレスの管理とルーティング(経路選択)を担当する。" },
+    { id: "t04", cat: "tech", diff: 2, type: "mc", q: "複数のトランザクションが互いに相手の保持するロックの解放を待ち続け、処理が先に進まなくなる状態を何と呼ぶか。", opts: ["ライブロック", "デッドロック", "スラッシング", "フラグメンテーション"], answer: 1,
+      exp: "デッドロックは複数のプロセス・トランザクションが互いにリソースの解放を待ち合い、永久に処理が進まなくなる状態。" },
+    { id: "t05", cat: "tech", diff: 1, type: "mc", q: "Webアプリケーションに対する攻撃のうち、悪意のあるスクリプトを被害者のブラウザ上で実行させ、Cookie窃取などにつなげる攻撃はどれか。", opts: ["SQLインジェクション", "クロスサイトスクリプティング(XSS)", "DNSキャッシュポイズニング", "ブルートフォース攻撃"], answer: 1,
+      exp: "XSSは脆弱なWebサイトを経由して悪意のあるスクリプトを利用者のブラウザで実行させる攻撃。" },
+    { id: "t06", cat: "tech", diff: 2, type: "mc", q: "公開鍵暗号方式の特徴として、最も適切なものはどれか。", opts: ["暗号化と復号に同じ鍵を使う", "共通鍵暗号方式に比べて鍵の配送問題が生じにくい", "共通鍵暗号方式に比べて一般に暗号化・復号処理が高速である", "鍵長が短いほど安全性が高い"], answer: 1,
+      exp: "公開鍵暗号は暗号化鍵(公開鍵)と復号鍵(秘密鍵)が異なるため、鍵の配送問題を軽減できる。ただし処理速度は共通鍵暗号方式より一般に遅い。" },
+    { id: "t07", cat: "tech", diff: 1, type: "mc", q: "CPUと主記憶の速度差を埋めるため、よく使うデータやプログラムを一時的に保持する高速な記憶装置はどれか。", opts: ["仮想記憶", "キャッシュメモリ", "レジスタ", "DMA"], answer: 1,
+      exp: "キャッシュメモリはCPUと主記憶の間に置かれ、アクセス頻度の高いデータを保持することで実効的なアクセス速度を高める。" },
+    { id: "t08", cat: "tech", diff: 1, type: "mc", q: "後入れ先出し(LIFO: Last In First Out)の性質を持つデータ構造はどれか。", opts: ["キュー", "スタック", "連結リスト", "二分木"], answer: 1,
+      exp: "スタックは最後に格納したデータを最初に取り出すLIFO構造。関数呼び出しの管理などに使われる。" },
+    { id: "t09", cat: "tech", diff: 1, type: "mc", q: "2つの入力がともに1のときにだけ出力が1になる論理回路はどれか。", opts: ["OR回路", "NOT回路", "AND回路", "XOR回路"], answer: 2,
+      exp: "AND回路(論理積)は入力がすべて1のときのみ出力が1になる。" },
+    { id: "t10", cat: "tech", diff: 1, type: "mc", q: "OSやミドルウェアを含む実行環境をクラウド事業者が提供し、利用者はその上でアプリケーションの開発・実行に専念できるサービス形態はどれか。", opts: ["SaaS", "PaaS", "IaaS", "DaaS"], answer: 1,
+      exp: "PaaS(Platform as a Service)はOSやミドルウェアまでを含むプラットフォームを提供する形態。" },
+    { id: "t11", cat: "tech", diff: 1, type: "mc", q: "2進数 1101 を10進数で表すといくつか。", opts: ["11", "12", "13", "14"], answer: 2,
+      exp: "1101(2) = 1×8 + 1×4 + 0×2 + 1×1 = 13。" },
+    { id: "t12", cat: "tech", diff: 1, type: "mc", q: "大量のデータからパターンやルールを学習し、未知のデータに対して予測・分類を行う技術分野を何と呼ぶか。", opts: ["機械学習", "データウェアハウス", "ERP", "RPA"], answer: 0,
+      exp: "機械学習(Machine Learning)はデータから統計的な規則性を学習し、予測や分類に応用する技術。" },
+    { id: "t13", cat: "tech", diff: 1, type: "mc", q: "センサーやアクチュエータを備えた「モノ」がネットワークに接続され、相互に情報をやり取りする仕組み・概念を指す用語はどれか。", opts: ["IoT", "EDI", "VPN", "CDN"], answer: 0,
+      exp: "IoT(Internet of Things)は様々な「モノ」がインターネットに接続し、情報をやり取りする仕組み・概念。" },
+    { id: "t14", cat: "tech", diff: 2, type: "mc", q: "クイックソートの平均的な計算量(オーダー)として最も適切なものはどれか。", opts: ["O(n)", "O(n log n)", "O(n^2)", "O(log n)"], answer: 1,
+      exp: "クイックソートは平均的にはO(n log n)。ただしピボットの選び方が偏ると最悪O(n^2)になる場合がある。" },
+    { id: "t15", cat: "tech", diff: 1, type: "mc", q: "複数のSQL文をひとまとまりの処理単位として扱い、途中で失敗した場合はすべての変更を取り消す仕組みは何か。", opts: ["インデックス", "トランザクション", "ビュー", "ストアドプロシージャ"], answer: 1,
+      exp: "トランザクションは、一連の処理を「すべて実行される」か「すべて実行されない」かのどちらかにする仕組み(原子性)。" },
+    { id: "t16", cat: "tech", diff: 2, type: "mc", q: "パスワードを平文のまま保存せず、一方向関数によって変換した値を保存する主な目的はどれか。", opts: ["保存容量を減らすため", "万が一データが漏えいしても元のパスワードを推測されにくくするため", "処理速度を上げるため", "パスワードの入力ミスを防ぐため"], answer: 1,
+      exp: "ハッシュ化(一方向関数による変換)により、漏えい時でも元のパスワードの復元を困難にする。" },
+    { id: "t17", cat: "tech", diff: 1, type: "mc", q: "メールの送受信に使われるプロトコルのうち、メールを送信するために使われるものはどれか。", opts: ["POP3", "SMTP", "FTP", "HTTP"], answer: 1,
+      exp: "SMTP(Simple Mail Transfer Protocol)はメール送信に使われる。受信にはPOP3やIMAPが使われる。" },
+    { id: "t18", cat: "tech", diff: 1, type: "mc", q: "主記憶装置(メモリ)の説明として適切なものはどれか。", opts: ["電源を切ってもデータが消えない不揮発性の記憶装置である", "CPUが直接読み書きできる高速な記憶装置で、電源を切るとデータが消える", "補助記憶装置よりも一般に安価で大容量である", "ネットワークを介してのみアクセスできる記憶装置である"], answer: 1,
+      exp: "主記憶装置(RAM)はCPUが直接アクセスできる高速な記憶装置だが、揮発性で電源を切るとデータは消える。" },
+    { id: "t19", cat: "tech", diff: 1, type: "mc", q: "教師あり学習の説明として最も適切なものはどれか。", opts: ["正解ラベルが付与されたデータを用いて学習する手法", "正解ラベルなしでデータの構造やパターンを発見する手法", "試行錯誤を通じて報酬を最大化する行動を学習する手法", "あらかじめ決められたルールのみに基づいて動作する手法"], answer: 0,
+      exp: "教師あり学習は、入力とその正解(ラベル)がセットになったデータを使ってモデルを学習させる手法。" },
+
+    // --- マネジメント系 四択 ---
+    { id: "m01", cat: "mgmt", diff: 2, type: "mc", q: "PERT図(アローダイアグラム)において、余裕時間がゼロで、プロジェクト全体の所要期間を決定づける経路を何と呼ぶか。", opts: ["サブパス", "クリティカルパス", "フリーパス", "バイパス"], answer: 1,
+      exp: "クリティカルパスは最長経路であり、この経路上の作業が遅れるとプロジェクト全体の完了が遅れる。" },
+    { id: "m02", cat: "mgmt", diff: 1, type: "mc", q: "短い期間(スプリント)ごとに計画・開発・レビューを繰り返し、変化する要求に柔軟に対応するソフトウェア開発手法はどれか。", opts: ["ウォーターフォールモデル", "アジャイル開発", "スパイラルモデル", "プロトタイピングモデル"], answer: 1,
+      exp: "アジャイル開発は短い反復(イテレーション/スプリント)を繰り返しながら段階的に開発を進める手法群の総称。" },
+    { id: "m03", cat: "mgmt", diff: 2, type: "mc", q: "ITサービスの提供・運用に関するベストプラクティスをまとめた、世界的に広く参照されているフレームワークはどれか。", opts: ["ITIL", "PMBOK", "COBIT", "CMMI"], answer: 0,
+      exp: "ITIL(IT Infrastructure Library)はITサービスマネジメントのベストプラクティス集。PMBOKはプロジェクトマネジメント、COBITはITガバナンス、CMMIはプロセス成熟度のフレームワーク。" },
+    { id: "m04", cat: "mgmt", diff: 1, type: "mc", q: "システム開発における成果物の版数や変更履歴を管理し、内容の整合性を保つ活動を何と呼ぶか。", opts: ["リスクマネジメント", "構成管理", "品質保証", "要員管理"], answer: 1,
+      exp: "構成管理(コンフィギュレーションマネジメント)は成果物の版管理・変更管理を通じて整合性を維持する活動。" },
+    { id: "m05", cat: "mgmt", diff: 2, type: "mc", q: "不良や問題の発生件数を原因別に分類し、影響の大きい順に並べて重点的に対処すべき原因を可視化する図はどれか。", opts: ["特性要因図", "パレート図", "散布図", "管理図"], answer: 1,
+      exp: "パレート図は項目を件数の多い順に並べた棒グラフと累積比率の折れ線を組み合わせ、重点管理すべき項目を可視化するQC七つ道具の一つ。" },
+    { id: "m06", cat: "mgmt", diff: 2, type: "mc", q: "プロジェクトにおけるリスク対応戦略のうち、リスクの影響を保険加入や外部委託によって他者に移す対応を何と呼ぶか。", opts: ["回避", "軽減", "転嫁", "受容"], answer: 2,
+      exp: "リスク対応には回避・軽減・転嫁(移転)・受容などがあり、保険加入や外部委託により影響を他者に移すことを転嫁と呼ぶ。" },
+    { id: "m07", cat: "mgmt", diff: 2, type: "mc", q: "ソフトウェア開発の規模を見積もる手法の一つで、画面数や入出力データの数などの機能量に基づいて規模を算出する手法はどれか。", opts: ["ファンクションポイント法", "LOC法", "類推見積法", "プログラムステップ法"], answer: 0,
+      exp: "ファンクションポイント法は、外部入出力・照会・ファイル数などの機能量を点数化して規模を見積もる手法。" },
+    { id: "m08", cat: "mgmt", diff: 1, type: "mc", q: "ソフトウェアテストにおいて、プログラムの内部構造(ソースコード)に着目してテストケースを設計する手法を何と呼ぶか。", opts: ["ブラックボックステスト", "ホワイトボックステスト", "回帰テスト", "受け入れテスト"], answer: 1,
+      exp: "ホワイトボックステストは内部構造(制御フローなど)に着目してテストケースを設計する。外部仕様のみに着目するのはブラックボックステスト。" },
+
+    // --- ストラテジ系 四択 ---
+    { id: "s01", cat: "strategy", diff: 1, type: "mc", q: "企業の内部環境(強み・弱み)と外部環境(機会・脅威)を整理し、戦略立案に用いる分析手法はどれか。", opts: ["3C分析", "SWOT分析", "PPM分析", "バリューチェーン分析"], answer: 1,
+      exp: "SWOT分析はStrength/Weakness/Opportunity/Threatの4象限で自社の状況を整理するフレームワーク。" },
+    { id: "s02", cat: "strategy", diff: 1, type: "mc", q: "マーケティングミックス(4P: Product, Price, Place, Promotion)のうち、商品を届ける流通経路に関わる要素はどれか。", opts: ["Product", "Price", "Place", "Promotion"], answer: 2,
+      exp: "Placeは流通チャネルや販売場所など、製品を顧客に届ける経路を表す。" },
+    { id: "s03", cat: "strategy", diff: 2, type: "mc", q: "従業員が職務上作成したプログラムの著作権は、契約等で特段の定めがない場合、原則として誰に帰属するか。", opts: ["作成した従業員", "発注元の顧客企業", "使用者(会社)", "著作権は発生しない"], answer: 2,
+      exp: "職務著作(法人著作)の要件を満たす場合、著作権は原則として使用者(法人)に帰属する(著作権法第15条)。" },
+    { id: "s04", cat: "strategy", diff: 1, type: "mc", q: "発明を保護する産業財産権であり、出願から原則として20年間権利が存続するものはどれか。", opts: ["著作権", "特許権", "商標権", "実用新案権"], answer: 1,
+      exp: "特許権は発明の保護を目的とし、存続期間は出願日から原則20年。著作権は登録不要で発生し保護期間はより長い。" },
+    { id: "s05", cat: "strategy", diff: 1, type: "mc", q: "売上高から変動費と固定費をすべて差し引いたときに利益がちょうどゼロになる売上高を何と呼ぶか。", opts: ["限界利益", "損益分岐点", "総費用", "営業利益"], answer: 1,
+      exp: "損益分岐点は利益がゼロになる売上高(または販売数量)であり、経営分析の基本指標の一つ。" },
+    { id: "s06", cat: "strategy", diff: 1, type: "mc", q: "個人情報保護法における「要配慮個人情報」に該当するものはどれか。", opts: ["氏名と電話番号", "病歴", "会社名", "メールアドレス"], answer: 1,
+      exp: "要配慮個人情報には人種・信条・病歴・犯罪歴など、不当な差別や偏見が生じないよう特に配慮が必要な情報が含まれる。" },
+    { id: "s07", cat: "strategy", diff: 1, type: "mc", q: "貸借対照表(バランスシート)において、「資産の合計」と等しくなるものはどれか。", opts: ["負債の合計のみ", "純資産の合計のみ", "負債の合計と純資産の合計の和", "売上高と費用の差"], answer: 2,
+      exp: "貸借対照表は「資産=負債+純資産」という関係が常に成り立つ。" },
+    { id: "s08", cat: "strategy", diff: 1, type: "mc", q: "新製品が市場に投入されてから成長・成熟・衰退していく過程を表すモデルを何と呼ぶか。", opts: ["プロダクトライフサイクル", "バリューチェーン", "SWOT分析", "PPM"], answer: 0,
+      exp: "プロダクトライフサイクルは、製品が「導入期→成長期→成熟期→衰退期」と変化していく様子を表すモデル。" },
+    { id: "s09", cat: "strategy", diff: 2, type: "mc", q: "労働者を自社に受け入れて指揮命令下で働かせるが、雇用契約は別の会社(派遣元)と結ばれている就業形態を何と呼ぶか。", opts: ["請負", "労働者派遣", "業務委託", "出向"], answer: 1,
+      exp: "労働者派遣は、派遣元と雇用契約を結んだ労働者が、派遣先の指揮命令を受けて働く形態。請負や業務委託では発注先からの直接の指揮命令は行われない点が異なる。" },
+
+    // --- 記述式(午後の雰囲気、簡易版) ---
+    { id: "ts01", cat: "tech", diff: 2, type: "short", q: "あるシステムは1件の処理に平均0.02秒かかる。1秒間に処理できる最大件数(スループット)は何件か。整数で答えよ。",
+      accept: ["50", "50件"], exp: "1 ÷ 0.02 = 50 件/秒。スループットは単位時間あたりに処理できる件数を表す。", answerText: "50件" },
+    { id: "ts02", cat: "tech", diff: 2, type: "short", q: "稼働率0.9の装置を2台直列に接続したシステム全体の稼働率はいくらか。小数で答えよ(例:0.81)。",
+      accept: ["0.81"], exp: "直列システムでは各装置の稼働率の積になる。0.9 × 0.9 = 0.81。", answerText: "0.81" },
+    { id: "ts03", cat: "tech", diff: 2, type: "short", q: "稼働率0.8の装置を2台並列に接続した(どちらか一方が稼働していればシステム全体が稼働する)場合の全体の稼働率はいくらか。小数で答えよ。",
+      accept: ["0.96"], exp: "並列システムの稼働率は 1-(両方とも故障している確率) で求める。1-(1-0.8)×(1-0.8) = 1-0.04 = 0.96。", answerText: "0.96" },
+    { id: "ts04", cat: "tech", diff: 1, type: "short", q: "2進数 11001 を10進数で表すといくつか。",
+      accept: ["25"], exp: "11001(2) = 16 + 8 + 0 + 0 + 1 = 25。", answerText: "25" },
+    { id: "ts05", cat: "tech", diff: 1, type: "short", q: "次のSQL文の空欄に入る句を答えよ。「社員」表から部署コードが'A01'である行をすべて取得する。\n\nSELECT * FROM 社員 ( 空欄 ) 部署コード = 'A01';",
+      accept: ["where", "WHERE"], exp: "抽出条件を指定するにはWHERE句を使う。「SELECT * FROM 社員 WHERE 部署コード = 'A01';」となる。", answerText: "WHERE" },
+    { id: "ts06", cat: "tech", diff: 1, type: "short", q: "8進数 17 を10進数で表すといくつか。",
+      accept: ["15"], exp: "17(8) = 1×8 + 7×1 = 15。", answerText: "15" },
+    { id: "ts07", cat: "tech", diff: 1, type: "short", q: "あるファイルのサイズは1,500,000バイトである。これは約何MBか。1MB=1,000,000バイトとして、小数第1位まで答えよ。",
+      accept: ["1.5", "1.5mb"], exp: "1,500,000 ÷ 1,000,000 = 1.5MB。", answerText: "1.5MB" },
+    { id: "ts08", cat: "tech", diff: 2, type: "short", q: "テーブルを結合する際、共通の列の値が一致する行だけを取り出す結合方法を何結合と呼ぶか。漢字2文字で答えよ。",
+      accept: ["内部", "inner"], exp: "内部結合(INNER JOIN)は、結合条件に一致する行だけを取り出す結合方法。一致しない行も含めるのは外部結合(OUTER JOIN)。", answerText: "内部結合" },
+    { id: "ms01", cat: "mgmt", diff: 2, type: "short", q: "PERT法における作業の想定所要期間の見積もりで、楽観値が4日、最頻値が6日、悲観値が8日のとき、期待値(3点見積り)は何日か。te=(楽観値+4×最頻値+悲観値)÷6で計算せよ。",
+      accept: ["6", "6日"], exp: "期待値te=(楽観値+4×最頻値+悲観値)÷6=(4+4×6+8)÷6=36÷6=6日。", answerText: "6日" },
+    { id: "ss01", cat: "strategy", diff: 2, type: "short", q: "ある商品の販売価格は1個2,000円、変動費は1個1,200円、固定費は月額240,000円である。損益分岐点となる月間販売個数は何個か。",
+      accept: ["300", "300個"], exp: "損益分岐点販売量 = 固定費 ÷ (販売価格-変動費) = 240,000 ÷ (2,000-1,200) = 240,000 ÷ 800 = 300個。", answerText: "300個" },
+    { id: "ss02", cat: "strategy", diff: 2, type: "short", q: "ある商品を1個3,000円で販売し、変動費が1個1,800円、固定費が月額600,000円のとき、月に800個販売した場合の営業利益はいくらか(円で)。",
+      accept: ["360000", "360,000", "360000円", "360,000円"], exp: "限界利益=800個×(3,000-1,800)円=960,000円。営業利益=限界利益-固定費=960,000-600,000=360,000円。", answerText: "360,000円" },
+    { id: "ss03", cat: "strategy", diff: 1, type: "short", q: "自己資本200百万円、総資産800百万円の企業の自己資本比率は何%か。整数で答えよ。",
+      accept: ["25", "25%"], exp: "自己資本比率=自己資本÷総資産×100=200÷800×100=25%。", answerText: "25%" }
+  ];
+
+  // --- 午後風ケース問題(長文+複数設問) ---
+  const CASES = [
+    {
+      id: "caseA", cat: "tech", diff: 3, label: "ケース問題: ネットワーク構成",
+      passage: "あるオフィスには、来客用Wi-Fiと社内業務用ネットワークが1台のルーターに同居していた。過去に来客端末がウイルスに感染し、社内サーバーに不正アクセスされかける事故が発生した。今後、来客ネットワークと社内ネットワークを論理的に分離し、来客端末から社内サーバーへの通信を遮断したい。社内セグメントには 192.168.10.0/24 が割り当てられている。",
+      subs: [
+        { type: "mc", q: "このような事故の再発を防ぐために最も適切な対策はどれか。",
+          opts: ["全端末に同じSSIDとパスワードを設定する", "ゲストネットワークをVLANで分離し、社内セグメントへの通信をファイアウォールで遮断する", "社内サーバーのパスワードを複雑にするだけで対応する", "ルーターのファームウェアを最新に保つだけで対応する"], answer: 1,
+          exp: "ネットワークセグメントを分離(VLAN)し、セグメント間通信をファイアウォールで制御することで、ゲスト機器から社内システムへの不正アクセスを防げる。" },
+        { type: "mc", q: "このように、ネットワークを利用目的や信頼度に応じて論理的に分割する設計の考え方を何と呼ぶか。",
+          opts: ["ロードバランシング", "ネットワークセグメンテーション", "キャッシング", "ミラーリング"], answer: 1,
+          exp: "用途・信頼度に応じてネットワークを分割し、被害の拡大(不正アクセスの横方向への広がり)を防ぐ設計をネットワークセグメンテーションと呼ぶ。" },
+        { type: "short", q: "社内セグメント 192.168.10.0/24 で割り当て可能なホストアドレスは最大何個か。整数で答えよ。",
+          accept: ["254", "254個"], exp: "/24は残り8ビットがホスト部。2^8-2(ネットワークアドレスとブロードキャストアドレスを除く)=254。", answerText: "254個" }
+      ]
+    },
+    {
+      id: "caseB", cat: "mgmt", diff: 3, label: "ケース問題: プロジェクト進捗管理",
+      passage: "あるプロジェクトは次の5つの作業からなる。作業A(3日、先行作業なし)、作業B(5日、Aの後に開始)、作業C(4日、Aの後に開始)、作業D(2日、BとCの両方が終わった後に開始)、作業E(6日、Cの後に開始)。プロジェクトは、すべての作業が終了した時点で完了する。",
+      subs: [
+        { type: "short", q: "このプロジェクト全体の最短所要日数は何日か。整数で答えよ。",
+          accept: ["13", "13日"], exp: "各経路の合計日数を比較する。A→B→D=3+5+2=10日、A→C→D=3+4+2=9日、A→C→E=3+4+6=13日で最長のA→C→Eがクリティカルパスとなり、所要日数は13日。", answerText: "13日" },
+        { type: "mc", q: "このプロジェクトのクリティカルパスとして正しいものはどれか。",
+          opts: ["A→B→D", "A→C→D", "A→C→E", "B→D→E"], answer: 2,
+          exp: "各経路の日数のうち最大となるA→C→E(3+4+6=13日)がクリティカルパスとなる。" },
+        { type: "short", q: "作業Dのフロート(余裕時間)は何日か。整数で答えよ。",
+          accept: ["3", "3日"], exp: "作業Dは作業B(完了8日目)と作業C(完了7日目)の両方が終わってから開始できるため最早開始は8日目、最早終了は10日目。プロジェクト全体の期限は13日目なので最遅終了は13日目、最遅開始は11日目。フロート=最遅開始-最早開始=11-8=3日。", answerText: "3日" }
+      ]
+    },
+    {
+      id: "caseC", cat: "strategy", diff: 3, label: "ケース問題: 経営指標の分析",
+      passage: "ある小売企業の当期の実績は、売上高5,000万円、変動費3,000万円、固定費1,500万円であった。",
+      subs: [
+        { type: "short", q: "この企業の当期の限界利益(売上高-変動費)はいくらか。単位を「万円」として整数で答えよ。",
+          accept: ["2000", "2000万円"], exp: "限界利益=売上高-変動費=5,000-3,000=2,000万円。", answerText: "2,000万円" },
+        { type: "short", q: "この企業の損益分岐点売上高はいくらか(万円、整数で)。",
+          accept: ["3750", "3750万円"], exp: "限界利益率=限界利益÷売上高=2,000÷5,000=0.4。損益分岐点売上高=固定費÷限界利益率=1,500÷0.4=3,750万円。", answerText: "3,750万円" },
+        { type: "mc", q: "当期の営業利益はいくらか。",
+          opts: ["300万円", "500万円", "700万円", "1,500万円"], answer: 1,
+          exp: "営業利益=売上高-変動費-固定費=5,000-3,000-1,500=500万円。" }
+      ]
+    }
+  ];
+
+  function buildPool() {
+    const pool = STANDALONE.slice();
+    CASES.forEach(c => {
+      c.subs.forEach((sub, i) => {
+        const item = Object.assign({
+          id: c.id + "-" + i,
+          cat: c.cat,
+          diff: c.diff,
+          isCase: true,
+          caseLabel: c.label + " (" + (i + 1) + "/" + c.subs.length + ")",
+          casePassage: c.passage
+        }, sub);
+        item.q = sub.q;
+        pool.push(item);
+      });
+    });
+    return pool;
+  }
+  const POOL = buildPool();
+  const TOTAL_POOL = POOL.length;
+
+  // ============ Storage ============
+  const BEST_KEY = "ap_quiz_best_v2";
+  const STATS_KEY = "ap_quiz_stats_v2";
+  const SETTINGS_KEY = "ap_quiz_settings_v2";
+
+  function safeParse(str, fallback) {
+    try { const v = JSON.parse(str); return v == null ? fallback : v; } catch (e) { return fallback; }
+  }
+  function loadBest() { return safeParse(localStorage.getItem(BEST_KEY), null); }
+  function saveBest(s) { try { localStorage.setItem(BEST_KEY, JSON.stringify(s)); } catch (e) {} }
+
+  function loadStats() {
+    return safeParse(localStorage.getItem(STATS_KEY), { qstats: {}, sessions: [] });
+  }
+  function saveStats(s) { try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch (e) {} }
+
+  function loadSettings() {
+    return safeParse(localStorage.getItem(SETTINGS_KEY), { dark: false, sound: true });
+  }
+  function saveSettings(s) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (e) {} }
+
+  let settings = loadSettings();
+
+  // ============ Sound ============
+  let audioCtx = null;
+  function beep(freq, dur, type) {
+    if (!settings.sound) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type || "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    } catch (e) { /* ignore */ }
+  }
+  function playCorrect() { beep(880, 0.18, "sine"); setTimeout(() => beep(1175, 0.18, "sine"), 90); }
+  function playWrong() { beep(180, 0.28, "sawtooth"); }
+
+  // ============ Utils ============
+  function toHalfWidth(str) {
+    return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+  }
+  function normalize(str) {
+    return toHalfWidth(String(str)).trim().toLowerCase().replace(/\s+/g, "").replace(/,/g, "");
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  const $ = sel => document.querySelector(sel);
+
+  // ============ Theme / Sound toggles ============
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", settings.dark ? "dark" : "light");
+    $("#theme-toggle").textContent = settings.dark ? "☀️" : "🌙";
+  }
+  function applySoundIcon() {
+    $("#sound-toggle").textContent = settings.sound ? "🔊" : "🔇";
+  }
+  $("#theme-toggle").addEventListener("click", () => {
+    settings.dark = !settings.dark;
+    saveSettings(settings);
+    applyTheme();
+  });
+  $("#sound-toggle").addEventListener("click", () => {
+    settings.sound = !settings.sound;
+    saveSettings(settings);
+    applySoundIcon();
+    if (settings.sound) playCorrect();
+  });
+  applyTheme();
+  applySoundIcon();
+
+  // ============ Start screen state ============
+  const activeCats = new Set(["tech", "mgmt", "strategy"]);
+  let activeDiff = "all";
+  let activeCount = 20;
+  let timerMode = false;
+
+  $("#pool-count").textContent = TOTAL_POOL;
+
+  function refreshTopStats() {
+    const best = loadBest();
+    $("#best-num").textContent = best ? (best.score + "/" + best.total) : "--";
+    const stats = loadStats();
+    $("#session-count").textContent = stats.sessions.length;
+  }
+  refreshTopStats();
+
+  function filteredPool() {
+    return POOL.filter(q => {
+      if (!activeCats.has(q.cat)) return false;
+      if (activeDiff !== "all" && String(q.diff) !== activeDiff) return false;
+      return true;
+    });
+  }
+
+  function updatePoolWarning() {
+    const n = filteredPool().length;
+    $("#pool-warning").style.display = n === 0 ? "block" : "none";
+    $("#start-btn").disabled = n === 0;
+  }
+
+  document.querySelectorAll("#cat-chips .chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const cat = chip.dataset.cat;
+      if (activeCats.has(cat)) {
+        if (activeCats.size > 1) activeCats.delete(cat);
+      } else {
+        activeCats.add(cat);
+      }
+      chip.classList.toggle("active", activeCats.has(cat));
+      updatePoolWarning();
+    });
+  });
+
+  document.querySelectorAll("#diff-chips .chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      activeDiff = chip.dataset.diff;
+      document.querySelectorAll("#diff-chips .chip").forEach(c => c.classList.toggle("active", c === chip));
+      updatePoolWarning();
+    });
+  });
+
+  document.querySelectorAll("#count-chips .chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      activeCount = parseInt(chip.dataset.count, 10);
+      document.querySelectorAll("#count-chips .chip").forEach(c => c.classList.toggle("active", c === chip));
+    });
+  });
+
+  $("#timer-mode").addEventListener("change", e => { timerMode = e.target.checked; });
+
+  // ============ Quiz state ============
+  let order = [];
+  let idx = 0;
+  let score = 0;
+  let answered = false;
+  let results = [];
+  let wrongList = [];
+  let reviewMode = false;
+  let timerInterval = null;
+  let timerRemaining = 45;
+  const TIMER_SECONDS = 45;
+
+  const startScreen = $("#start-screen");
+  const quizScreen = $("#quiz-screen");
+  const resultScreen = $("#result-screen");
+  const statsScreen = $("#stats-screen");
+
+  function showScreen(name) {
+    startScreen.hidden = name !== "start";
+    quizScreen.hidden = name !== "quiz";
+    resultScreen.hidden = name !== "result";
+    statsScreen.hidden = name !== "stats";
+  }
+
+  function startQuiz(items) {
+    order = items;
+    idx = 0;
+    score = 0;
+    results = [];
+    wrongList = [];
+    answered = false;
+    showScreen("quiz");
+    renderQuestion();
+  }
+
+  $("#start-btn").addEventListener("click", () => {
+    const pool = filteredPool();
+    if (pool.length === 0) return;
+    reviewMode = false;
+    const n = Math.min(activeCount, pool.length);
+    startQuiz(shuffle(pool).slice(0, n));
+  });
+
+  $("#retry-btn").addEventListener("click", () => {
+    const pool = filteredPool();
+    reviewMode = false;
+    const n = Math.min(activeCount, pool.length);
+    startQuiz(shuffle(pool).slice(0, n));
+  });
+
+  $("#review-btn").addEventListener("click", () => {
+    if (wrongList.length === 0) return;
+    reviewMode = true;
+    startQuiz(wrongList.slice());
+  });
+
+  $("#back-to-start-btn").addEventListener("click", () => {
+    refreshTopStats();
+    updatePoolWarning();
+    showScreen("start");
+  });
+
+  function clearTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function startTimer() {
+    clearTimer();
+    if (!timerMode) { $("#timer-row").classList.remove("show"); return; }
+    timerRemaining = TIMER_SECONDS;
+    $("#timer-row").classList.add("show");
+    updateTimerUI();
+    timerInterval = setInterval(() => {
+      timerRemaining--;
+      updateTimerUI();
+      if (timerRemaining <= 0) {
+        clearTimer();
+        if (!answered) forceTimeout();
+      }
+    }, 1000);
+  }
+
+  function updateTimerUI() {
+    $("#timer-num").textContent = timerRemaining;
+    const pct = Math.max(0, (timerRemaining / TIMER_SECONDS) * 100);
+    const fill = $("#timer-fill");
+    fill.style.width = pct + "%";
+    fill.classList.toggle("danger", timerRemaining <= 10);
+  }
+
+  function forceTimeout() {
+    const q = order[idx];
+    answered = true;
+    if (q.type === "mc") {
+      const btns = document.querySelectorAll(".opt-btn");
+      btns.forEach((b, bi) => { b.disabled = true; if (bi === q.answer) b.classList.add("correct"); });
+    } else {
+      $("#short-input").disabled = true;
+    }
+    finishAnswer(false, q, true);
+  }
+
+  function renderQuestion() {
+    answered = false;
+    const q = order[idx];
+
+    $("#progress-fill").style.width = (idx / order.length * 100) + "%";
+    $("#progress-text").textContent = (idx + 1) + " / " + order.length;
+
+    const tagsWrap = $("#q-tags");
+    tagsWrap.innerHTML = "";
+    const catTag = document.createElement("span");
+    catTag.className = "tag " + CATS[q.cat].cls;
+    catTag.textContent = CATS[q.cat].label;
+    tagsWrap.appendChild(catTag);
+    const typeTag = document.createElement("span");
+    typeTag.className = "tag " + (q.isCase ? "case" : (q.type === "mc" ? "mc" : "short"));
+    typeTag.textContent = q.isCase ? "ケース" : (q.type === "mc" ? "四択" : "記述");
+    tagsWrap.appendChild(typeTag);
+    const diffDots = document.createElement("span");
+    diffDots.className = "diff-dots";
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.createElement("span");
+      if (i <= q.diff) dot.classList.add("on");
+      diffDots.appendChild(dot);
+    }
+    tagsWrap.appendChild(diffDots);
+
+    const caseBox = $("#case-box");
+    if (q.isCase) {
+      caseBox.hidden = false;
+      $("#case-label").textContent = q.caseLabel;
+      $("#case-passage").textContent = q.casePassage;
+    } else {
+      caseBox.hidden = true;
+    }
+
+    $("#q-text").textContent = q.q;
+
+    const optsWrap = $("#options-wrap");
+    const shortWrap = $("#short-wrap");
+    optsWrap.innerHTML = "";
+    $("#feedback").className = "feedback";
+    $("#next-btn").className = "";
+
+    if (q.type === "mc") {
+      shortWrap.style.display = "none";
+      optsWrap.style.display = "flex";
+      const marks = ["A", "B", "C", "D"];
+      q.opts.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.className = "opt-btn";
+        btn.innerHTML = '<span class="opt-mark">' + marks[i] + '</span><span>' + opt + '</span>';
+        btn.addEventListener("click", () => selectMC(i));
+        optsWrap.appendChild(btn);
+      });
+    } else {
+      optsWrap.style.display = "none";
+      shortWrap.style.display = "flex";
+      $("#short-input").value = "";
+      $("#short-input").disabled = false;
+      $("#short-input").focus();
+    }
+
+    startTimer();
+  }
+
+  function selectMC(i) {
+    if (answered) return;
+    answered = true;
+    clearTimer();
+    const q = order[idx];
+    const correct = i === q.answer;
+    const btns = document.querySelectorAll(".opt-btn");
+    btns.forEach((b, bi) => {
+      b.disabled = true;
+      if (bi === q.answer) b.classList.add("correct");
+      else if (bi === i && !correct) b.classList.add("incorrect");
+    });
+    finishAnswer(correct, q);
+  }
+
+  $("#short-submit").addEventListener("click", submitShort);
+  $("#short-input").addEventListener("keydown", e => { if (e.key === "Enter") submitShort(); });
+
+  function submitShort() {
+    if (answered) return;
+    const q = order[idx];
+    const val = $("#short-input").value;
+    if (!val.trim()) return;
+    answered = true;
+    clearTimer();
+    $("#short-input").disabled = true;
+    const norm = normalize(val);
+    const correct = q.accept.some(a => normalize(a) === norm);
+    finishAnswer(correct, q);
+  }
+
+  function recordQStat(qid, correct) {
+    const stats = loadStats();
+    if (!stats.qstats[qid]) stats.qstats[qid] = { seen: 0, correct: 0 };
+    stats.qstats[qid].seen++;
+    if (correct) stats.qstats[qid].correct++;
+    saveStats(stats);
+  }
+
+  function finishAnswer(correct, q, timedOut) {
+    if (correct) score++;
+    results.push({ cat: q.cat, correct });
+    if (!correct) wrongList.push(q);
+    if (!reviewMode) recordQStat(q.id, correct);
+
+    if (correct) playCorrect(); else playWrong();
+
+    const fb = $("#feedback");
+    fb.classList.add("show", correct ? "ok" : "ng");
+    $("#fb-title").textContent = timedOut ? "⏱ 時間切れ" : (correct ? "✓ 正解" : "✗ 不正解");
+    $("#fb-body").textContent = q.exp;
+    $("#fb-answer").textContent = q.type === "short" ? ("模範解答: " + q.answerText) : "";
+
+    $("#next-btn").classList.add("show");
+  }
+
+  $("#next-btn").addEventListener("click", () => {
+    idx++;
+    if (idx >= order.length) {
+      showResult();
+    } else {
+      renderQuestion();
+    }
+  });
+
+  function showResult() {
+    clearTimer();
+    showScreen("result");
+
+    $("#score-big").textContent = score + "/" + order.length;
+    const pct = Math.round(score / order.length * 100);
+    $("#score-percent").textContent = "正答率 " + pct + "%";
+
+    const byCategory = {};
+    Object.keys(CATS).forEach(c => byCategory[c] = { correct: 0, total: 0 });
+    results.forEach(r => {
+      byCategory[r.cat].total++;
+      if (r.correct) byCategory[r.cat].correct++;
+    });
+
+    const bd = $("#breakdown");
+    bd.innerHTML = "";
+    Object.keys(CATS).forEach(c => {
+      const d = byCategory[c];
+      if (d.total === 0) return;
+      const p = Math.round(d.correct / d.total * 100);
+      const row = document.createElement("div");
+      row.className = "bd-row";
+      row.innerHTML =
+        '<div class="bd-head"><span>' + CATS[c].label + '</span><span>' + d.correct + '/' + d.total + '</span></div>' +
+        '<div class="bd-track"><div class="bd-fill ' + CATS[c].cls + '" style="width:' + p + '%"></div></div>';
+      bd.appendChild(row);
+    });
+
+    if (!reviewMode) {
+      const stats = loadStats();
+      stats.sessions.push({ date: Date.now(), score, total: order.length, pct });
+      if (stats.sessions.length > 30) stats.sessions = stats.sessions.slice(-30);
+      saveStats(stats);
+
+      const best = loadBest();
+      if (!best || score > best.score || (score === best.score && order.length > best.total)) {
+        saveBest({ score, total: order.length });
+      }
+    }
+    refreshTopStats();
+
+    $("#review-btn").disabled = wrongList.length === 0;
+    $("#review-btn").textContent = wrongList.length === 0
+      ? "全問正解でした!"
+      : "間違えた問題を見直す (" + wrongList.length + "問)";
+  }
+
+  // ============ Stats screen ============
+  $("#goto-stats-btn").addEventListener("click", () => { renderStatsScreen(); showScreen("stats"); });
+  $("#back-from-stats-btn").addEventListener("click", () => { refreshTopStats(); updatePoolWarning(); showScreen("start"); });
+
+  function findQuestionById(id) {
+    return POOL.find(q => q.id === id);
+  }
+
+  function renderStatsScreen() {
+    const stats = loadStats();
+    const best = loadBest();
+
+    $("#s-total-sessions").textContent = stats.sessions.length;
+    $("#s-best").textContent = best ? (best.score + "/" + best.total) : "--";
+    if (stats.sessions.length > 0) {
+      const avg = Math.round(stats.sessions.reduce((sum, s) => sum + s.pct, 0) / stats.sessions.length);
+      $("#s-avg-pct").textContent = avg + "%";
+    } else {
+      $("#s-avg-pct").textContent = "--";
+    }
+
+    const barsWrap = $("#history-bars");
+    barsWrap.innerHTML = "";
+    const recent = stats.sessions.slice(-12);
+    $("#history-empty").hidden = recent.length > 0;
+    recent.forEach(s => {
+      const bar = document.createElement("div");
+      bar.className = "hb";
+      bar.style.height = Math.max(4, s.pct) + "%";
+      bar.title = s.pct + "%";
+      barsWrap.appendChild(bar);
+    });
+
+    // category breakdown across all recorded question stats
+    const catAgg = { tech: { correct: 0, seen: 0 }, mgmt: { correct: 0, seen: 0 }, strategy: { correct: 0, seen: 0 } };
+    Object.keys(stats.qstats).forEach(qid => {
+      const q = findQuestionById(qid);
+      if (!q) return;
+      const st = stats.qstats[qid];
+      catAgg[q.cat].seen += st.seen;
+      catAgg[q.cat].correct += st.correct;
+    });
+    const catBd = $("#cat-breakdown");
+    catBd.innerHTML = "";
+    let anyCat = false;
+    Object.keys(CATS).forEach(c => {
+      const d = catAgg[c];
+      if (d.seen === 0) return;
+      anyCat = true;
+      const p = Math.round(d.correct / d.seen * 100);
+      const row = document.createElement("div");
+      row.className = "bd-row";
+      row.innerHTML =
+        '<div class="bd-head"><span>' + CATS[c].label + '</span><span>' + d.correct + '/' + d.seen + ' (' + p + '%)</span></div>' +
+        '<div class="bd-track"><div class="bd-fill ' + CATS[c].cls + '" style="width:' + p + '%"></div></div>';
+      catBd.appendChild(row);
+    });
+    if (!anyCat) catBd.innerHTML = '<div class="empty-note">まだデータがありません</div>';
+
+    // weak questions
+    const weakEntries = Object.keys(stats.qstats)
+      .map(qid => ({ qid, st: stats.qstats[qid], q: findQuestionById(qid) }))
+      .filter(e => e.q && e.st.seen >= 2 && (e.st.correct / e.st.seen) < 0.6)
+      .sort((a, b) => (a.st.correct / a.st.seen) - (b.st.correct / b.st.seen))
+      .slice(0, 8);
+
+    const weakList = $("#weak-list");
+    weakList.innerHTML = "";
+    $("#weak-empty").hidden = weakEntries.length > 0;
+    $("#review-weak-btn").disabled = weakEntries.length === 0;
+    weakEntries.forEach(e => {
+      const rate = Math.round(e.st.correct / e.st.seen * 100);
+      const row = document.createElement("div");
+      row.className = "weak-item";
+      row.innerHTML =
+        '<span class="wq-text">' + e.q.q.slice(0, 40) + (e.q.q.length > 40 ? "…" : "") + '</span>' +
+        '<span class="wq-rate">正答率' + rate + '%</span>';
+      weakList.appendChild(row);
+    });
+
+    weakList._items = weakEntries.map(e => e.q);
+  }
+
+  $("#review-weak-btn").addEventListener("click", () => {
+    const items = $("#weak-list")._items || [];
+    if (items.length === 0) return;
+    reviewMode = true;
+    startQuiz(shuffle(items));
+  });
+
+  updatePoolWarning();
+})();
+</script>
+</body>
+</html>
