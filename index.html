@@ -1,5 +1,4 @@
-<!DOCTYPE html><!-- v1.0 -->
-
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -371,6 +370,20 @@
   .weak-item .wq-rate { font-size: 11.5px; font-weight: 800; color: var(--red); white-space: nowrap; }
   .empty-note { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
 
+  .ai-loading { text-align: center; padding: 44px 10px 30px; color: var(--muted); }
+  .ai-loading .spinner {
+    width: 34px; height: 34px; margin: 0 auto 16px;
+    border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%;
+    animation: ap-spin 0.8s linear infinite;
+  }
+  @keyframes ap-spin { to { transform: rotate(360deg); } }
+  .ai-loading p { font-size: 13px; margin: 0; }
+  .ai-error { text-align: center; padding: 14px 2px 4px; }
+  .ai-error p { color: var(--red); font-size: 13px; margin: 0 0 16px; line-height: 1.7; }
+  .ai-error .secondary { margin-bottom: 8px; }
+  .tag.ai { background: #eef0ff; color: #4b3fc9; }
+  [data-theme="dark"] .tag.ai { background: rgba(106,79,214,0.22); }
+
   [hidden] { display: none !important; }
 
   footer { text-align: center; margin-top: 20px; font-size: 11px; color: var(--muted); opacity: 0.7; }
@@ -445,6 +458,13 @@
           </div>
           <label class="switch"><input type="checkbox" id="timer-mode"><span class="slider"></span></label>
         </div>
+        <div class="toggle-row">
+          <div>
+            <div class="t-label">AI生成モード</div>
+            <div class="t-sub">毎回AIが新しい四択問題を作成(最大20問・通信が必要)</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="ai-mode"><span class="slider"></span></label>
+        </div>
       </div>
 
       <p class="desc" id="pool-warning" style="display:none; color:#e5484d;">選択した条件に該当する問題がありません。分野か難易度を見直してください。</p>
@@ -464,6 +484,17 @@
     <div class="timer-row" id="timer-row">
       <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
       <div class="timer-num" id="timer-num">45</div>
+    </div>
+
+    <div id="ai-loading" class="ai-loading" hidden>
+      <div class="spinner"></div>
+      <p>AIが問題を作成しています…</p>
+    </div>
+
+    <div id="ai-error" class="ai-error" hidden>
+      <p id="ai-error-text"></p>
+      <button class="secondary" id="ai-retry-btn">もう一度試す</button>
+      <button class="ghost" id="ai-cancel-btn" style="width:100%;">スタート画面に戻る</button>
     </div>
 
     <div id="case-box" class="case-box" hidden>
@@ -634,7 +665,7 @@
       accept: ["0.96"], exp: "並列システムの稼働率は 1-(両方とも故障している確率) で求める。1-(1-0.8)×(1-0.8) = 1-0.04 = 0.96。", answerText: "0.96" },
     { id: "ts04", cat: "tech", diff: 1, type: "short", q: "2進数 11001 を10進数で表すといくつか。",
       accept: ["25"], exp: "11001(2) = 16 + 8 + 0 + 0 + 1 = 25。", answerText: "25" },
-    { id: "ts05", cat: "tech", diff: 1, type: "short", q: "次のSQL文の空欄に入る句を答えよ。「社員」表から部署コードが'A01'である行をすべて取得する。\n\nSELECT * FROM 社員 ( 空欄 ) 部署コード = 'A01';",
+    { id: "ts05", cat: "tech", diff: 1, type: "short", q: "次のSQL文の空欄に入る句を答えよ。「社員」表から部署コードが'A01'である行をすべて取得する。\\n\\nSELECT * FROM 社員 ( 空欄 ) 部署コード = 'A01';",
       accept: ["where", "WHERE"], exp: "抽出条件を指定するにはWHERE句を使う。「SELECT * FROM 社員 WHERE 部署コード = 'A01';」となる。", answerText: "WHERE" },
     { id: "ts06", cat: "tech", diff: 1, type: "short", q: "8進数 17 を10進数で表すといくつか。",
       accept: ["15"], exp: "17(8) = 1×8 + 7×1 = 15。", answerText: "15" },
@@ -805,6 +836,9 @@
   let activeDiff = "all";
   let activeCount = 20;
   let timerMode = false;
+  let aiMode = false;
+  let usingAI = false;
+  const AI_MAX_COUNT = 20;
 
   $("#pool-count").textContent = TOTAL_POOL;
 
@@ -825,6 +859,11 @@
   }
 
   function updatePoolWarning() {
+    if (aiMode) {
+      $("#pool-warning").style.display = "none";
+      $("#start-btn").disabled = activeCats.size === 0;
+      return;
+    }
     const n = filteredPool().length;
     $("#pool-warning").style.display = n === 0 ? "block" : "none";
     $("#start-btn").disabled = n === 0;
@@ -859,6 +898,7 @@
   });
 
   $("#timer-mode").addEventListener("change", e => { timerMode = e.target.checked; });
+  $("#ai-mode").addEventListener("change", e => { aiMode = e.target.checked; updatePoolWarning(); });
 
   // ============ Quiz state ============
   let order = [];
@@ -885,6 +925,7 @@
   }
 
   function startQuiz(items) {
+    usingAI = false;
     order = items;
     idx = 0;
     score = 0;
@@ -895,17 +936,37 @@
     renderQuestion();
   }
 
+  function startAIQuiz(n) {
+    usingAI = true;
+    order = new Array(n).fill(null);
+    idx = 0;
+    score = 0;
+    results = [];
+    wrongList = [];
+    answered = false;
+    showScreen("quiz");
+    renderQuestion();
+  }
+
   $("#start-btn").addEventListener("click", () => {
+    reviewMode = false;
+    if (aiMode) {
+      startAIQuiz(Math.min(activeCount, AI_MAX_COUNT));
+      return;
+    }
     const pool = filteredPool();
     if (pool.length === 0) return;
-    reviewMode = false;
     const n = Math.min(activeCount, pool.length);
     startQuiz(shuffle(pool).slice(0, n));
   });
 
   $("#retry-btn").addEventListener("click", () => {
-    const pool = filteredPool();
     reviewMode = false;
+    if (aiMode) {
+      startAIQuiz(Math.min(activeCount, AI_MAX_COUNT));
+      return;
+    }
+    const pool = filteredPool();
     const n = Math.min(activeCount, pool.length);
     startQuiz(shuffle(pool).slice(0, n));
   });
@@ -963,11 +1024,18 @@
   }
 
   function renderQuestion() {
-    answered = false;
     const q = order[idx];
 
     $("#progress-fill").style.width = (idx / order.length * 100) + "%";
     $("#progress-text").textContent = (idx + 1) + " / " + order.length;
+
+    if (usingAI && !q) {
+      showAILoading();
+      loadAIQuestion();
+      return;
+    }
+    hideAIState();
+    answered = false;
 
     const tagsWrap = $("#q-tags");
     tagsWrap.innerHTML = "";
@@ -979,6 +1047,12 @@
     typeTag.className = "tag " + (q.isCase ? "case" : (q.type === "mc" ? "mc" : "short"));
     typeTag.textContent = q.isCase ? "ケース" : (q.type === "mc" ? "四択" : "記述");
     tagsWrap.appendChild(typeTag);
+    if (q.isAI) {
+      const aiTag = document.createElement("span");
+      aiTag.className = "tag ai";
+      aiTag.textContent = "AI生成";
+      tagsWrap.appendChild(aiTag);
+    }
     const diffDots = document.createElement("span");
     diffDots.className = "diff-dots";
     for (let i = 1; i <= 3; i++) {
@@ -1027,6 +1101,73 @@
     startTimer();
   }
 
+  function showAILoading() {    $("#ai-loading").hidden = false;
+    $("#ai-error").hidden = true;
+    $("#case-box").hidden = true;
+    $("#q-tags").hidden = true;
+    $("#q-text").hidden = true;
+    $("#options-wrap").hidden = true;
+    $("#short-wrap").style.display = "none";
+    $("#feedback").className = "feedback";
+    $("#next-btn").className = "";
+    $("#timer-row").classList.remove("show");
+    clearTimer();
+  }
+
+  function hideAIState() {
+    $("#ai-loading").hidden = true;
+    $("#ai-error").hidden = true;
+    $("#q-tags").hidden = false;
+    $("#q-text").hidden = false;
+    $("#options-wrap").hidden = false;
+  }
+
+  function showAIError(msg) {
+    $("#ai-loading").hidden = true;
+    $("#ai-error").hidden = false;
+    $("#ai-error-text").textContent = "問題の生成に失敗しました: " + msg;
+  }
+
+  $("#ai-retry-btn").addEventListener("click", () => {
+    showAILoading();
+    loadAIQuestion();
+  });
+  $("#ai-cancel-btn").addEventListener("click", () => {
+    clearTimer();
+    refreshTopStats();
+    updatePoolWarning();
+    showScreen("start");
+  });
+
+  async function loadAIQuestion() {
+    const cats = Array.from(activeCats);
+    const params = new URLSearchParams();
+    params.set("cat", cats.join(","));
+    params.set("diff", activeDiff);
+    try {
+      const resp = await fetch("/api/generate-question?" + params.toString());
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok || !data || !data.ok) {
+        throw new Error((data && data.error) || ("HTTP " + resp.status));
+      }
+      const item = data.question;
+      order[idx] = {
+        id: "ai-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+        cat: item.cat,
+        diff: item.diff,
+        type: "mc",
+        q: item.q,
+        opts: item.opts,
+        answer: item.answer,
+        exp: item.exp,
+        isAI: true
+      };
+      renderQuestion();
+    } catch (e) {
+      showAIError(e && e.message ? e.message : "不明なエラー");
+    }
+  }
+
   function selectMC(i) {
     if (answered) return;
     answered = true;
@@ -1070,7 +1211,7 @@
     if (correct) score++;
     results.push({ cat: q.cat, correct });
     if (!correct) wrongList.push(q);
-    if (!reviewMode) recordQStat(q.id, correct);
+    if (!reviewMode && !q.isAI) recordQStat(q.id, correct);
 
     if (correct) playCorrect(); else playWrong();
 
