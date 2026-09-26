@@ -133,7 +133,7 @@ module.exports = async (req, res) => {
 
   const prompt = buildPrompt(cat, diff);
 
-  let lastErr = null;
+  const errors = [];
   for (let attempt = 0; attempt < MODELS.length; attempt++) {
     try {
       const parsed = await callGemini(apiKey, prompt, MODELS[attempt]);
@@ -151,15 +151,15 @@ module.exports = async (req, res) => {
         });
         return;
       }
-      lastErr = new Error("model returned an unexpected shape");
+      errors.push(MODELS[attempt] + ": model returned an unexpected shape");
     } catch (e) {
-      lastErr = e;
+      errors.push(MODELS[attempt] + ": " + (e && e.message ? e.message : "unknown error"));
     }
   }
 
   res.status(502).json({
     ok: false,
     error: "AI問題の生成に失敗しました。時間をおいて再試行してください。(" +
-      (lastErr && lastErr.message ? lastErr.message : "unknown error") + ")"
+      errors.join(" / ") + ")"
   });
 };
