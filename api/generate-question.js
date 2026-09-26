@@ -31,9 +31,10 @@ const SCHEMA = {
   required: ["q", "opts", "answer", "exp", "cat", "diff"]
 };
 
-// Try the newest free-tier model first, falling back to older ones in case
-// Google retires one (this happens periodically with no advance notice).
-const MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"];
+// Try the newest free-tier model first, falling back to others in case one
+// is retired (happens periodically with no advance notice) or temporarily
+// overloaded (free-tier models occasionally return 503 "high demand").
+const MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -135,25 +136,37 @@ module.exports = async (req, res) => {
 
   const errors = [];
   for (let attempt = 0; attempt < MODELS.length; attempt++) {
-    try {
-      const parsed = await callGemini(apiKey, prompt, MODELS[attempt]);
-      if (validate(parsed)) {
-        res.status(200).json({
-          ok: true,
-          question: {
-            q: parsed.q,
-            opts: parsed.opts,
-            answer: parsed.answer,
-            exp: parsed.exp,
-            cat: CAT_LABELS[parsed.cat] ? parsed.cat : cat,
-            diff: [1, 2, 3].includes(parsed.diff) ? parsed.diff : diff
-          }
-        });
-        return;
+    const model = MODELS[attempt];
+    for (let retry = 0; retry < 2; retry++) {
+      try {
+        const parsed = await callGemini(apiKey, prompt, model);
+        if (validate(parsed)) {
+          res.status(200).json({
+            ok: true,
+            question: {
+              q: parsed.q,
+              opts: parsed.opts,
+              answer: parsed.answer,
+              exp: parsed.exp,
+              cat: CAT_LABELS[parsed.cat] ? parsed.cat : cat,
+              diff: [1, 2, 3].includes(parsed.diff) ? parsed.diff : diff
+            }
+          });
+          return;
+        }
+        errors.push(model + ": model returned an unexpected shape");
+        break;
+      } catch (e) {
+        const msg = e && e.message ? e.message : "unknown error";
+        errors.push(model + ": " + msg);
+        // A "high demand" 503 is often very short-lived, so give the same
+        // model one quick second chance before moving on to the next model.
+        if (retry === 0 && /503|UNAVAILABLE/i.test(msg)) {
+          await new Promise(r => setTimeout(r, 700));
+          continue;
+        }
+        break;
       }
-      errors.push(MODELS[attempt] + ": model returned an unexpected shape");
-    } catch (e) {
-      errors.push(MODELS[attempt] + ": " + (e && e.message ? e.message : "unknown error"));
     }
   }
 
