@@ -413,7 +413,7 @@
   <div id="start-screen">
     <div class="card">
       <h2>力試しクイズ</h2>
-      <p class="desc">応用情報技術者試験(午前・午後の一部)をイメージしたオリジナル問題です。四択・記述に加えて、午後風の長文ケース問題にも対応。分野と難易度を選んで出題できます。</p>
+      <p class="desc">応用情報技術者試験(午前・午後の一部)をイメージしたオリジナル問題です。四択・記述に加えて、午後試験対策用の長文ケース問題にも対応。分野と難易度を選んで出題できます。</p>
 
       <div class="stat-mini-grid">
         <div class="stat-box"><div class="num" id="pool-count">57</div><div class="label">出題候補</div></div>
@@ -440,17 +440,7 @@
         </div>
       </div>
 
-      <div class="filter-group" id="count-filter-group">
-        <div class="filter-label">問題数</div>
-        <div class="chip-row" id="count-chips">
-          <button class="chip neutral" data-count="10">10問</button>
-          <button class="chip active neutral" data-count="20">20問</button>
-          <button class="chip neutral" data-count="30">30問</button>
-          <button class="chip neutral" data-count="999">全問</button>
-        </div>
-      </div>
-
-      <div class="filter-group" style="margin-bottom:6px;">
+            <div class="filter-group" style="margin-bottom:6px;">
         <div class="toggle-row">
           <div>
             <div class="t-label">タイムアタックモード</div>
@@ -458,14 +448,9 @@
           </div>
           <label class="switch"><input type="checkbox" id="timer-mode"><span class="slider"></span></label>
         </div>
-        <div class="toggle-row">
-          <div>
-            <div class="t-label">AI生成モード</div>
-            <div class="t-sub">毎回AIが新しい四択問題を作成(何問でも続けられます・いつでも終了可・通信が必要)</div>
-          </div>
-          <label class="switch"><input type="checkbox" id="ai-mode" checked><span class="slider"></span></label>
-        </div>
       </div>
+
+      <p class="desc">✨ AIが毎回オリジナルの新しい四択問題を作成します。何問でも続けられ、いつでも終了できます(通信が必要です)。</p>
 
       <p class="desc" id="pool-warning" style="display:none; color:#e5484d;">選択した条件に該当する問題がありません。分野か難易度を見直してください。</p>
 
@@ -836,7 +821,7 @@
   let activeDiff = "all";
   let activeCount = 20;
   let timerMode = false;
-  let aiMode = true;
+  const aiMode = true; // AI生成モード固定(トグルUIは廃止済み)
   let usingAI = false;
 
   $("#pool-count").textContent = TOTAL_POOL;
@@ -889,20 +874,8 @@
     });
   });
 
-  document.querySelectorAll("#count-chips .chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      activeCount = parseInt(chip.dataset.count, 10);
-      document.querySelectorAll("#count-chips .chip").forEach(c => c.classList.toggle("active", c === chip));
-    });
-  });
-
   $("#timer-mode").addEventListener("change", e => { timerMode = e.target.checked; });
-  $("#ai-mode").addEventListener("change", e => {
-    aiMode = e.target.checked;
-    $("#count-filter-group").style.display = aiMode ? "none" : "";
-    updatePoolWarning();
-  });
-    $("#count-filter-group").style.display = aiMode ? "none" : "";
+  updatePoolWarning();
 
   // ============ Quiz state ============
   let order = [];
