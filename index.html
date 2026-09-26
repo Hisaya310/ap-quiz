@@ -440,7 +440,7 @@
         </div>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" id="count-filter-group">
         <div class="filter-label">問題数</div>
         <div class="chip-row" id="count-chips">
           <button class="chip neutral" data-count="10">10問</button>
@@ -461,7 +461,7 @@
         <div class="toggle-row">
           <div>
             <div class="t-label">AI生成モード</div>
-            <div class="t-sub">毎回AIが新しい四択問題を作成(最大20問・通信が必要)</div>
+            <div class="t-sub">毎回AIが新しい四択問題を作成(何問でも続けられます・いつでも終了可・通信が必要)</div>
           </div>
           <label class="switch"><input type="checkbox" id="ai-mode"><span class="slider"></span></label>
         </div>
@@ -478,8 +478,9 @@
 
   <div id="quiz-screen" class="card" hidden>
     <div class="progress-row">
-      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-track" id="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <div class="progress-text" id="progress-text">1 / 20</div>
+      <button class="ghost" id="ai-finish-btn" style="padding:4px 0 4px 8px; white-space:nowrap; flex-shrink:0;" hidden>終了する</button>
     </div>
     <div class="timer-row" id="timer-row">
       <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
@@ -559,7 +560,6 @@
       <div class="empty-note" id="weak-empty" hidden>まだ苦手な問題は見つかっていません</div>
       <button class="primary" id="review-weak-btn" style="margin-top:12px;">苦手問題だけ復習する</button>
     </div>
-
     <button class="ghost" id="back-from-stats-btn">← 戻る</button>
   </div>
 
@@ -838,10 +838,9 @@
   let timerMode = false;
   let aiMode = false;
   let usingAI = false;
-  const AI_MAX_COUNT = 20;
 
   $("#pool-count").textContent = TOTAL_POOL;
-
+  
   function refreshTopStats() {
     const best = loadBest();
     $("#best-num").textContent = best ? (best.score + "/" + best.total) : "--";
@@ -898,7 +897,11 @@
   });
 
   $("#timer-mode").addEventListener("change", e => { timerMode = e.target.checked; });
-  $("#ai-mode").addEventListener("change", e => { aiMode = e.target.checked; updatePoolWarning(); });
+  $("#ai-mode").addEventListener("change", e => {
+    aiMode = e.target.checked;
+    $("#count-filter-group").style.display = aiMode ? "none" : "";
+    updatePoolWarning();
+  });
 
   // ============ Quiz state ============
   let order = [];
@@ -936,9 +939,9 @@
     renderQuestion();
   }
 
-  function startAIQuiz(n) {
+  function startAIQuiz() {
     usingAI = true;
-    order = new Array(n).fill(null);
+    order = [null];
     idx = 0;
     score = 0;
     results = [];
@@ -951,7 +954,7 @@
   $("#start-btn").addEventListener("click", () => {
     reviewMode = false;
     if (aiMode) {
-      startAIQuiz(Math.min(activeCount, AI_MAX_COUNT));
+      startAIQuiz();
       return;
     }
     const pool = filteredPool();
@@ -963,7 +966,7 @@
   $("#retry-btn").addEventListener("click", () => {
     reviewMode = false;
     if (aiMode) {
-      startAIQuiz(Math.min(activeCount, AI_MAX_COUNT));
+      startAIQuiz();
       return;
     }
     const pool = filteredPool();
@@ -1026,8 +1029,14 @@
   function renderQuestion() {
     const q = order[idx];
 
-    $("#progress-fill").style.width = (idx / order.length * 100) + "%";
-    $("#progress-text").textContent = (idx + 1) + " / " + order.length;
+    if (usingAI) {
+      $("#progress-track").style.display = "none";
+      $("#progress-text").textContent = (idx + 1) + "問目";
+    } else {
+      $("#progress-track").style.display = "";
+      $("#progress-fill").style.width = (idx / order.length * 100) + "%";
+      $("#progress-text").textContent = (idx + 1) + " / " + order.length;
+    }
 
     if (usingAI && !q) {
       showAILoading();
@@ -1101,7 +1110,8 @@
     startTimer();
   }
 
-  function showAILoading() {    $("#ai-loading").hidden = false;
+  function showAILoading() {
+    $("#ai-loading").hidden = false;
     $("#ai-error").hidden = true;
     $("#case-box").hidden = true;
     $("#q-tags").hidden = true;
@@ -1111,6 +1121,7 @@
     $("#feedback").className = "feedback";
     $("#next-btn").className = "";
     $("#timer-row").classList.remove("show");
+    $("#ai-finish-btn").hidden = true;
     clearTimer();
   }
 
@@ -1120,12 +1131,14 @@
     $("#q-tags").hidden = false;
     $("#q-text").hidden = false;
     $("#options-wrap").hidden = false;
+    $("#ai-finish-btn").hidden = !usingAI;
   }
 
   function showAIError(msg) {
     $("#ai-loading").hidden = true;
     $("#ai-error").hidden = false;
     $("#ai-error-text").textContent = "問題の生成に失敗しました: " + msg;
+    $("#ai-finish-btn").hidden = true;
   }
 
   $("#ai-retry-btn").addEventListener("click", () => {
@@ -1137,6 +1150,16 @@
     refreshTopStats();
     updatePoolWarning();
     showScreen("start");
+  });
+  $("#ai-finish-btn").addEventListener("click", () => {
+    if (results.length === 0) {
+      clearTimer();
+      refreshTopStats();
+      updatePoolWarning();
+      showScreen("start");
+      return;
+    }
+    showResult();
   });
 
   async function loadAIQuestion() {
@@ -1226,7 +1249,10 @@
 
   $("#next-btn").addEventListener("click", () => {
     idx++;
-    if (idx >= order.length) {
+    if (usingAI) {
+      order.push(null);
+      renderQuestion();
+    } else if (idx >= order.length) {
       showResult();
     } else {
       renderQuestion();
@@ -1237,8 +1263,9 @@
     clearTimer();
     showScreen("result");
 
-    $("#score-big").textContent = score + "/" + order.length;
-    const pct = Math.round(score / order.length * 100);
+    const total = results.length;
+    $("#score-big").textContent = score + "/" + total;
+    const pct = total > 0 ? Math.round(score / total * 100) : 0;
     $("#score-percent").textContent = "正答率 " + pct + "%";
 
     const byCategory = {};
@@ -1262,15 +1289,15 @@
       bd.appendChild(row);
     });
 
-    if (!reviewMode) {
+    if (!reviewMode && total > 0) {
       const stats = loadStats();
-      stats.sessions.push({ date: Date.now(), score, total: order.length, pct });
+      stats.sessions.push({ date: Date.now(), score, total, pct });
       if (stats.sessions.length > 30) stats.sessions = stats.sessions.slice(-30);
       saveStats(stats);
 
       const best = loadBest();
-      if (!best || score > best.score || (score === best.score && order.length > best.total)) {
-        saveBest({ score, total: order.length });
+      if (!best || score > best.score || (score === best.score && total > best.total)) {
+        saveBest({ score, total });
       }
     }
     refreshTopStats();
