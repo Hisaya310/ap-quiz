@@ -463,7 +463,7 @@
             <div class="t-label">AI生成モード</div>
             <div class="t-sub">毎回AIが新しい四択問題を作成(何問でも続けられます・いつでも終了可・通信が必要)</div>
           </div>
-          <label class="switch"><input type="checkbox" id="ai-mode"><span class="slider"></span></label>
+          <label class="switch"><input type="checkbox" id="ai-mode" checked><span class="slider"></span></label>
         </div>
       </div>
 
@@ -489,7 +489,7 @@
 
     <div id="ai-loading" class="ai-loading" hidden>
       <div class="spinner"></div>
-      <p>AIが問題を作成しています…</p>
+      <p>AIがオリジナルの問題を作成しています。少々お待ちください…</p>
     </div>
 
     <div id="ai-error" class="ai-error" hidden>
@@ -836,7 +836,7 @@
   let activeDiff = "all";
   let activeCount = 20;
   let timerMode = false;
-  let aiMode = false;
+  let aiMode = true;
   let usingAI = false;
 
   $("#pool-count").textContent = TOTAL_POOL;
@@ -902,6 +902,7 @@
     $("#count-filter-group").style.display = aiMode ? "none" : "";
     updatePoolWarning();
   });
+    $("#count-filter-group").style.display = aiMode ? "none" : "";
 
   // ============ Quiz state ============
   let order = [];
@@ -1162,30 +1163,53 @@
     showResult();
   });
 
-  async function loadAIQuestion() {
+// ---- AI question prefetching ----
+  // While the user is reading the current question's feedback, we fetch the
+  // NEXT one in the background so it is usually already ready by the time
+  // they tap "次の問題へ", instead of making them wait for it then.
+  let aiNextPromise = null;
+
+  function fetchAIQuestionOnce() {
     const cats = Array.from(activeCats);
     const params = new URLSearchParams();
     params.set("cat", cats.join(","));
     params.set("diff", activeDiff);
+    return fetch("/api/generate-question?" + params.toString()).then(resp =>
+      resp.json().catch(() => null).then(data => {
+        if (!resp.ok || !data || !data.ok) {
+          throw new Error((data && data.error) || ("HTTP " + resp.status));
+        }
+        const item = data.question;
+        return {
+          id: "ai-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+          cat: item.cat,
+          diff: item.diff,
+          type: "mc",
+          q: item.q,
+          opts: item.opts,
+          answer: item.answer,
+          exp: item.exp,
+          isAI: true
+        };
+      })
+    );
+  }
+
+  function schedulePrefetch() {
+    if (!usingAI) return;
+    aiNextPromise = fetchAIQuestionOnce().catch(e => ({ __aiError: e }));
+  }
+
+  async function loadAIQuestion() {
+    let promise = aiNextPromise;
+    aiNextPromise = null;
+    if (!promise) promise = fetchAIQuestionOnce();
     try {
-      const resp = await fetch("/api/generate-question?" + params.toString());
-      const data = await resp.json().catch(() => null);
-      if (!resp.ok || !data || !data.ok) {
-        throw new Error((data && data.error) || ("HTTP " + resp.status));
-      }
-      const item = data.question;
-      order[idx] = {
-        id: "ai-" + Date.now() + "-" + Math.random().toString(36).slice(2),
-        cat: item.cat,
-        diff: item.diff,
-        type: "mc",
-        q: item.q,
-        opts: item.opts,
-        answer: item.answer,
-        exp: item.exp,
-        isAI: true
-      };
+      const result = await promise;
+      if (result && result.__aiError) throw result.__aiError;
+      order[idx] = result;
       renderQuestion();
+      schedulePrefetch();
     } catch (e) {
       showAIError(e && e.message ? e.message : "不明なエラー");
     }
