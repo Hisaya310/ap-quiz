@@ -31,7 +31,9 @@ const SCHEMA = {
   required: ["q", "opts", "answer", "exp", "cat", "diff"]
 };
 
-const MODEL = "gemini-2.5-flash";
+// Try the newest free-tier model first, falling back to older ones in case
+// Google retires one (this happens periodically with no advance notice).
+const MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"];
 
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -61,9 +63,9 @@ function validate(obj) {
     typeof obj.exp === "string" && obj.exp.trim().length > 0;
 }
 
-async function callGemini(apiKey, prompt) {
+async function callGemini(apiKey, prompt, model) {
   const resp = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
     {
       method: "POST",
       headers: {
@@ -132,9 +134,9 @@ module.exports = async (req, res) => {
   const prompt = buildPrompt(cat, diff);
 
   let lastErr = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < MODELS.length; attempt++) {
     try {
-      const parsed = await callGemini(apiKey, prompt);
+      const parsed = await callGemini(apiKey, prompt, MODELS[attempt]);
       if (validate(parsed)) {
         res.status(200).json({
           ok: true,
